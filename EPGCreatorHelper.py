@@ -226,12 +226,45 @@ class Ui_Form(object):
         self.configView.itemSelectionChanged.connect(self.configViewHandler)
         self.saveButton.clicked.connect(self.saveChangesToFile)
         self.configExPathButton.clicked.connect(self.configExPathButtonClicked)
+        self.grHideButton.clicked.connect(self.grHideButtonClicked)
 
         if self.m3uExportEdit.text() == '':
             self.m3uExportEdit.setText('channelExport.m3u')
 
         if self.configPathEdit.text() == '':
             self.configPathEdit.setText('my.channels.xml')
+
+    def grHideButtonClicked(self):
+        #What group if any
+        items = self.groupView.selectedIndexes()
+        if len(items) < 1:
+            return
+        grName = items[0].data()
+        # assume that hiding everything is an accident
+        # TODO: change it to actually unhide/hide everything
+        if grName == '(all)':
+            if len(self.hiddenGroups) != self.groupView.count():
+                log('hide all')
+                for row in range(self.groupView.count()):
+                    current = self.groupView.item(row).text()
+                    if current not in self.hiddenGroups:
+                        self.hiddenGroups.append(current)
+                        self.groupView.item(row).setForeground(QColor(210,210,210))
+            else:
+                for row in range(self.groupView.count()):
+                    current = self.groupView.item(row).text()
+                    self.hiddenGroups.remove(current)
+                    self.groupView.item(row).setForeground(QColor(0,0,0))
+
+        else:
+            row = items[0].row()
+            if grName not in self.hiddenGroups:
+                self.hiddenGroups.append(grName)
+                self.groupView.item(row).setForeground(QColor(210,210,210))
+            else:
+                self.hiddenGroups.remove(grName)
+                self.groupView.item(row).setForeground(QColor(0,0,0))
+        self.scanAllVisibleForEPG()
 
 
     def configViewHandler(self):
@@ -250,6 +283,8 @@ class Ui_Form(object):
 
         #change tvgid and name of channel
             self.channelData[curChannel].ID = self.channelConfigData[conf].xmltv_id
+            log('changing tvid from '+self.channelData[curChannel].ID+' to '+
+                self.channelConfigData[conf].xmltv_id)
 
         #should an existing epg have been selected, unselect it
             curEPG = self.epgView.selectedItems()
@@ -377,6 +412,11 @@ class Ui_Form(object):
     def scanAllVisibleForEPG(self):
         for row in range(self.channelView.count()):
             name = self.channelView.item(row).text()
+            #do nothing if hidden group
+            if self.channelData[name].group in self.hiddenGroups:
+                self.channelView.item(row).setForeground(QColor(210,210,210))
+                continue
+
             num = self.findEPG(name)
             if num < 0:
                 if self.isInConfigRememberList(name):
@@ -403,7 +443,7 @@ class Ui_Form(object):
             print("you selected " + index.data())
             self.channelView.clear()
             if(index.data() == '(all)'):
-                for key in self.channelData:
+                for key in sorted(self.channelData):
                     self.channelView.addItem(key)
             else:
                 for key in sorted(self.channelData):
@@ -502,6 +542,10 @@ class Ui_Form(object):
         for group in sorted(self.groups):
             for key in sorted(self.channelData):
                 channel = self.channelData[key]
+                # skip hidden channels
+                if channel.group in self.hiddenGroups:
+                    continue
+
                 if channel.group == group:
                    f.write('#EXTINF:-1 tvg-id="%s" tvg-name="%s" tvg-logo="%s" group-title="%s",%s\n' %
                            (
