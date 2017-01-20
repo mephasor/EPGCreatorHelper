@@ -1,6 +1,8 @@
 # EPGCreatorHelper
 Create WebGrabber+Plus configs the easy way
 
+![screenShotHere](https://github.com/mephasor/EPGCreatorHelper/blob/master/img/epgHelper.png "EPGCreatorHelper Screenshot")
+
 ## How to start:
  1. Install requirements (requirements.txt)
  2. Start using python (python EPGCreatorHelper.py)
