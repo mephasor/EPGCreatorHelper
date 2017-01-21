@@ -372,6 +372,7 @@ class Ui_Form(object):
         if self.isInConfigRememberList(curSelection):
             row = self.getConfigRow(curSelection)
             self.configView.setCurrentRow(row)
+        self.scanAllVisibleForEPG()
 
 
     def findEPG(self, curSelection):
@@ -433,7 +434,7 @@ class Ui_Form(object):
         self.epgData = er.getChannelNames()
         self.epgLine.setText(fileName)
         self.epgView.clear()
-        for chID in self.epgData:
+        for chID in sorted(self.epgData):
             self.epgView.addItem(self.epgData[chID])
         self.scanAllVisibleForEPG()
 
